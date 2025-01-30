@@ -1,0 +1,275 @@
+//include stuff here
+#include <cstdio>
+
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
+#include <grpc/grpc.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/health_check_service_interface.h>
+
+#include "AglShellGrpcClient.h"
+#include "agl_shell.grpc.pb.h"
+
+using namespace std::chrono;
+
+namespace {
+	const char kDefaultGrpcServiceAddress[] = "127.0.0.1:14005";
+}
+
+GrpcClient::GrpcClient()
+{
+	m_channel = grpc::CreateChannel(kDefaultGrpcServiceAddress,
+			grpc::InsecureChannelCredentials());
+
+	// init the stub here
+	m_stub = agl_shell_ipc::AglShellManagerService::NewStub(m_channel);
+	reader = new Reader(m_stub.get());
+}
+
+void
+GrpcClient::WaitForConnected(int wait_time_ms, int tries_timeout)
+{
+	struct timespec ts;
+	grpc_connectivity_state state;
+	int try_ = 0;
+
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	ts.tv_sec = 0;
+	ts.tv_nsec = wait_time_ms * 1000 * 1000;
+
+	while (((state = m_channel->GetState(true)) != GRPC_CHANNEL_READY) && 
+		try_++ < tries_timeout) {
+		fprintf(stderr, "waiting for channel state to be ready, current state %d\n", state);
+		nanosleep(&ts, NULL);
+	}
+
+}
+
+
+bool
+GrpcClient::ActivateApp(const std::string& app_id, const std::string& output_name)
+{
+	agl_shell_ipc::ActivateRequest request;
+
+	request.set_app_id(app_id);
+	request.set_output_name(output_name);
+
+	grpc::ClientContext context;
+	::agl_shell_ipc::ActivateResponse reply;
+
+	grpc::Status status = m_stub->ActivateApp(&context, request, &reply);
+	return status.ok();
+}
+
+bool
+GrpcClient::DeactivateApp(const std::string& app_id)
+{
+	agl_shell_ipc::DeactivateRequest request;
+
+	request.set_app_id(app_id);
+
+	grpc::ClientContext context;
+	::agl_shell_ipc::DeactivateResponse reply;
+
+	grpc::Status status = m_stub->DeactivateApp(&context, request, &reply);
+	return status.ok();
+}
+
+bool
+GrpcClient::SetAppFloat(const std::string& app_id, int32_t x_pos, int32_t y_pos)
+{
+	agl_shell_ipc::FloatRequest request;
+
+	request.set_app_id(app_id);
+
+	request.set_x_pos(x_pos);
+	request.set_y_pos(y_pos);
+
+	grpc::ClientContext context;
+	::agl_shell_ipc::FloatResponse reply;
+
+	fprintf(stderr, "%s() calling SetAppFloat with x_pos %d, y_pos %d\n", __func__, x_pos, y_pos);
+
+	grpc::Status status = m_stub->SetAppFloat(&context, request, &reply);
+	return status.ok();
+}
+
+bool
+GrpcClient::SetAppNormal(const std::string& app_id)
+{
+	agl_shell_ipc::NormalRequest request;
+
+	request.set_app_id(app_id);
+
+	grpc::ClientContext context;
+	::agl_shell_ipc::NormalResponse reply;
+
+	grpc::Status status = m_stub->SetAppNormal(&context, request, &reply);
+	return status.ok();
+}
+
+bool
+GrpcClient::SetAppFullscreen(const std::string& app_id)
+{
+	agl_shell_ipc::FullscreenRequest request;
+
+	request.set_app_id(app_id);
+
+	grpc::ClientContext context;
+	::agl_shell_ipc::FullscreenResponse reply;
+
+	grpc::Status status = m_stub->SetAppFullscreen(&context, request, &reply);
+	return status.ok();
+}
+
+bool
+GrpcClient::SetAppOnOutput(const std::string& app_id, const std::string &output)
+{
+	agl_shell_ipc::AppOnOutputRequest request;
+
+	request.set_app_id(app_id);
+	request.set_output(output);
+
+	grpc::ClientContext context;
+	::agl_shell_ipc::AppOnOutputResponse reply;
+
+	grpc::Status status = m_stub->SetAppOnOutput(&context, request, &reply);
+	return status.ok();
+}
+
+bool
+GrpcClient::SetAppPosition(const std::string& app_id, int32_t x, int32_t y)
+{
+	agl_shell_ipc::AppPositionRequest request;
+
+	request.set_app_id(app_id);
+	request.set_x(x);
+	request.set_y(y);
+
+	grpc::ClientContext context;
+	::agl_shell_ipc::AppPositionResponse reply;
+
+	grpc::Status status = m_stub->SetAppPosition(&context, request, &reply);
+	return status.ok();
+}
+
+bool
+GrpcClient::SetAppScale(const std::string& app_id, int32_t width, int32_t height)
+{
+	agl_shell_ipc::AppScaleRequest request;
+
+	request.set_app_id(app_id);
+	request.set_width(width);
+	request.set_height(height);
+
+	grpc::ClientContext context;
+	::agl_shell_ipc::AppScaleResponse reply;
+
+	fprintf(stderr, "%s() calling SetAppScale with width %d, height %d\n", __func__, width, height);
+
+	grpc::Status status = m_stub->SetAppScale(&context, request, &reply);
+	return status.ok();
+}
+
+
+grpc::Status
+GrpcClient::Wait(void)
+{
+	return reader->Await();
+}
+
+void
+GrpcClient::AppStatusState(Callback callback, void *data)
+{
+	reader->AppStatusState(callback, data);
+}
+
+std::vector<std::string>
+GrpcClient::GetOutputs()
+{
+	grpc::ClientContext context;
+	std::vector<std::string> v;
+
+	::agl_shell_ipc::OutputRequest request;
+	::agl_shell_ipc::ListOutputResponse response;
+
+	grpc::Status status = m_stub->GetOutputs(&context, request, &response);
+	if (!status.ok())
+		return std::vector<std::string>();
+
+	for (int i = 0; i < response.outputs_size(); i++) {
+		::agl_shell_ipc::OutputResponse rresponse = response.outputs(i);
+		v.push_back(rresponse.name());
+	}
+
+	return v;
+}
+
+// C interface
+extern "C" GrpcClient *init_grpc_client(void)
+{
+	GrpcClient *client = new GrpcClient();
+	client->WaitForConnected(500, 10);
+
+	fprintf(stderr, "%s() gRPC connection ready\n", __func__);
+	return client;
+}
+
+extern "C" void
+destroy_grpc_client(GrpcClient *c)
+{
+	delete c;
+}
+
+extern "C" void
+grpc_client_set_app_float(GrpcClient *c, const char *app_id, int32_t x_pos, int32_t y_pos)
+{
+	c->SetAppFloat(std::string(app_id), x_pos, y_pos);
+}
+
+extern "C" void
+grpc_client_activate_app(GrpcClient *c, const char *app_id, const char *output)
+{
+	c->ActivateApp(std::string(app_id), std::string(output));
+}
+
+extern "C" void
+grpc_client_set_app_scale(GrpcClient *c, const char *app_id, int32_t width, int32_t height)
+{
+	c->SetAppScale(std::string(app_id), width, height);
+}
+
+extern "C" char **
+grpc_client_get_outputs(GrpcClient *c, int *output_no)
+{
+	char **my_outputs = NULL;
+	int o = 0;
+
+	*output_no = o;
+	std::vector<std::string> outputs = c->GetOutputs();
+
+	if (outputs.empty()) {
+		return my_outputs;
+	}
+
+	my_outputs = static_cast<char **>(calloc(outputs.size(), sizeof(char *)));
+
+	for (size_t i = 0; i < outputs.size(); i++, o++) {
+		const char *out_name = outputs[i].c_str();
+
+		my_outputs[i] = static_cast<char *>(calloc(1, strlen(out_name) + 1));
+		memcpy(my_outputs[i], out_name, strlen(out_name));
+	}
+
+	//"HDMI-A-1\0HDMI-A-2\0";
+
+	*output_no = o;
+	return my_outputs;
+
+}
