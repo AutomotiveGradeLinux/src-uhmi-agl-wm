@@ -705,6 +705,19 @@ grpc_add_layer(list_element_t *screen_elm, json_t *layer_jobj, int layer_id,
 	return layer_elm;
 }
 
+const char *
+grpc_get_first_available_output(struct GrpcClient *grpc_client)
+{
+	int output_no = 0;
+
+	char **outputs = grpc_client_get_outputs(grpc_client, &output_no);
+
+	if (output_no)
+		return outputs[0];
+
+	return NULL;
+}
+
 static list_element_t *
 grpc_add_surface(list_element_t *layer_elm, json_t *surface_jobj,
 		 int surface_id, CMD_TYPE type, insert_info_t insert_info,
@@ -748,8 +761,6 @@ grpc_add_surface(list_element_t *layer_elm, json_t *surface_jobj,
 		/* FIXME: appid should be received from ULA file */
 		const char *dpath = "com.github.remote-virtio-gpu.renderer.sc0.id";
 
-		/* FIXME: get screen from List */
-		const char *output_name = "HDMI-A-2";
 
 		/* these need to be deverived accordingly from what we get from
 		 * ULA */
@@ -757,6 +768,12 @@ grpc_add_surface(list_element_t *layer_elm, json_t *surface_jobj,
 		int32_t y_pos = 0;
 
 		snprintf(appid, MAX_PATH_SIZE, "%s%d", dpath, surface_elm->id);
+
+		const char *output_name = grpc_get_first_available_output(grpc_client);
+		if (!output_name) {
+			fprintf(stderr, "Invalid output to activate app %s\n", appid);
+			return NULL;
+		}
 
 		/* FIXME: we don't know how to interpret the ULA values yet
 		 * so this assumes just two outputs.

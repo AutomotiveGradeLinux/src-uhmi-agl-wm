@@ -33,9 +33,8 @@
 
 #include "aglshell_grpc_wrapper.h"
 
-struct GrpcClient *grpc_client = NULL;
 
-void wait_event_loop(void)
+static void wait_event_loop(struct GrpcClient *grpc_client)
 {
 	struct pollfd fds[2];
 	int accept_fd = -1;
@@ -94,9 +93,9 @@ void wait_event_loop(void)
 
 int main(void)
 {
-	grpc_client = init_grpc_client();
+	struct GrpcClient *grpc_client = init_grpc_client();
 
-	wait_event_loop();
+	wait_event_loop(grpc_client);
 
 	destroy_grpc_client(grpc_client);
 
