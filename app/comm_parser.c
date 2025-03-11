@@ -42,6 +42,7 @@
 #define JSON_KEY_LAYERS "layers"
 #define JSON_KEY_SURFACES "surfaces"
 #define JSON_KEY_ID "id"
+#define JSON_KEY_APP_ID "app_id"
 #define JSON_KEY_WIDTH "width"
 #define JSON_KEY_HEIGHT "height"
 #define JSON_KEY_SRCX "src_x"
@@ -463,6 +464,14 @@ static int parse_id(json_t *jobject, uint32_t *id)
 	return 0;
 }
 
+static int parse_appid(json_t *jobject, char *appid)
+{
+	if (get_json_string_value(jobject, JSON_KEY_APP_ID, appid) < 0) {
+		return -1;
+	}
+	return 0;
+}
+
 #if 0
 static int parse_hostname(json_t *jobject)
 {
@@ -730,7 +739,7 @@ const char *grpc_get_first_available_output(struct GrpcClient *grpc_client)
 
 static list_element_t *grpc_add_surface(list_element_t *layer_elm,
 					json_t *surface_jobj, int surface_id,
-					CMD_TYPE type,
+					char *jappid, CMD_TYPE type,
 					insert_info_t insert_info,
 					struct GrpcClient *grpc_client)
 {
@@ -768,17 +777,18 @@ static list_element_t *grpc_add_surface(list_element_t *layer_elm,
 			llayer_prop->lp.dst_w, llayer_prop->lp.dst_h);
 
 #endif
-
-		/* FIXME: appid should be received from ULA file */
-		const char *dpath =
-			"com.github.remote-virtio-gpu.renderer.sc0.id";
+		if (jappid == NULL) {
+			fprintf(stderr,
+				"could not get a valid jappid from aglwinmgr\n");
+			return NULL;
+		} else {
+			snprintf(appid, MAX_PATH_SIZE, "%s", jappid);
+		}
 
 		/* these need to be deverived accordingly from what we get from
 		 * ULA */
 		int32_t x_pos = 0;
 		int32_t y_pos = 0;
-
-		snprintf(appid, MAX_PATH_SIZE, "%s%d", dpath, surface_elm->id);
 
 		const char *output_name =
 			grpc_get_first_available_output(grpc_client);
@@ -872,8 +882,12 @@ static int parse_all_grpc_in_screen(json_t *jobject,
 				uint32_t surface_id = 0;
 				parse_id(surface_jobj, &surface_id);
 
+				char jappid[1024] = { 0 };
+				parse_appid(surface_jobj, jappid);
+
 				grpc_add_surface(layer_elm, surface_jobj,
-						 surface_id, CMD_TYPE_ADD,
+						 surface_id, jappid,
+						 CMD_TYPE_ADD,
 						 insert_info_default,
 						 grpc_client);
 			}
@@ -959,10 +973,15 @@ static int parse_add_surface_grpc_command(json_t *jobject,
 						return -1;
 					}
 
-					grpc_add_surface(
-						layer_elm, surface_jobj,
-						surface_id, CMD_TYPE_ADD,
-						insert_info, grpc_client);
+					char jappid[1024] = { 0 };
+					parse_appid(surface_jobj, jappid);
+
+					grpc_add_surface(layer_elm,
+							 surface_jobj,
+							 surface_id, jappid,
+							 CMD_TYPE_ADD,
+							 insert_info,
+							 grpc_client);
 				}
 			}
 		}
