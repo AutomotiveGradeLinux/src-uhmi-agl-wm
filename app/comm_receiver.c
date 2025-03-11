@@ -23,7 +23,7 @@
 #include <sys/un.h>
 #include <errno.h>
 
-#define UHMI_IVI_WM_SOCK "/tmp/uhmi-ivi-wm_sock"
+#define UHMI_AGL_WM_SOCK "/tmp/uhmi-agl-wm_sock"
 const char MAGIC_CODE[4] = { 0x55, 0x4C, 0x41, 0x30 };
 
 int create_server_socket(void)
@@ -37,11 +37,11 @@ int create_server_socket(void)
 		return -1;
 	}
 
-	unlink(UHMI_IVI_WM_SOCK);
+	unlink(UHMI_AGL_WM_SOCK);
 
 	memset(&un, 0, sizeof(un));
 	un.sun_family = AF_UNIX;
-	strcpy(un.sun_path, UHMI_IVI_WM_SOCK);
+	strcpy(un.sun_path, UHMI_AGL_WM_SOCK);
 
 	ret = bind(sock_fd, (struct sockaddr *)&un, sizeof(un));
 	if (ret < 0) {
@@ -165,7 +165,7 @@ int connect_to_server(void)
 
 	memset(&un, 0, sizeof(un));
 	un.sun_family = AF_UNIX;
-	strcpy(un.sun_path, UHMI_IVI_WM_SOCK);
+	strcpy(un.sun_path, UHMI_AGL_WM_SOCK);
 
 	ret = connect(sock_fd, (struct sockaddr *)&un, sizeof(un));
 	if (ret < 0) {
