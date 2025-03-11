@@ -33,7 +33,6 @@
 
 #include "aglshell_grpc_wrapper.h"
 
-
 static void wait_event_loop(struct GrpcClient *grpc_client)
 {
 	struct pollfd fds[2];
@@ -74,12 +73,15 @@ static void wait_event_loop(struct GrpcClient *grpc_client)
 			int resp = -1;
 
 			if (exchange_magiccode_with_client(accept_fd) == 0) {
-				int size = acquire_body_size_from_client(accept_fd);
+				int size = acquire_body_size_from_client(
+					accept_fd);
 				if (size > 0) {
 					char *msg = (char *)calloc(size + 1, 1);
 
-					acquire_body_from_client(accept_fd, &msg, size);
-					resp = parser_parse_recv_command(msg, grpc_client);
+					acquire_body_from_client(accept_fd,
+								 &msg, size);
+					resp = parser_parse_recv_command(
+						msg, grpc_client);
 					if (msg) {
 						free(msg);
 					}

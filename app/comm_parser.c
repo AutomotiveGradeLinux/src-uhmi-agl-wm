@@ -88,16 +88,19 @@ static int get_list_size(struct list_head *list_head)
 {
 	int size = 0;
 	list_element_t *elm;
-	TAILQ_FOREACH(elm, list_head, entry) {
+	TAILQ_FOREACH(elm, list_head, entry)
+	{
 		size++;
 	}
 	return size;
 }
 
-static list_element_t *pop_list_element(struct list_head *list_head, unsigned int id)
+static list_element_t *pop_list_element(struct list_head *list_head,
+					unsigned int id)
 {
 	list_element_t *elm;
-	TAILQ_FOREACH(elm, list_head, entry) {
+	TAILQ_FOREACH(elm, list_head, entry)
+	{
 		if (elm->id == id) {
 			TAILQ_REMOVE(list_head, elm, entry);
 			return elm;
@@ -106,10 +109,12 @@ static list_element_t *pop_list_element(struct list_head *list_head, unsigned in
 	return NULL;
 }
 
-static list_element_t *get_list_element(struct list_head *list_head, unsigned int id)
+static list_element_t *get_list_element(struct list_head *list_head,
+					unsigned int id)
 {
 	list_element_t *elm;
-	TAILQ_FOREACH(elm, list_head, entry) {
+	TAILQ_FOREACH(elm, list_head, entry)
+	{
 		if (elm->id == id) {
 			return elm;
 		}
@@ -192,7 +197,8 @@ static void remove_surface_properties(unsigned int surface_id)
 }
 
 static list_element_t *add_surface(list_element_t *layer_elm,
-				   surface_properties_t *prop, unsigned int surface_id,
+				   surface_properties_t *prop,
+				   unsigned int surface_id,
 				   insert_info_t insert_info)
 {
 	list_element_t *surface_elm = calloc(1, sizeof(*surface_elm));
@@ -290,12 +296,12 @@ static list_element_t *add_screen(unsigned int screen_id)
 static void grpc_add_exists_surfaces_to_layer(list_element_t *layer_elm)
 {
 	int surfaces = get_list_size(&layer_elm->list_head);
-	unsigned int *surface_array_n =
-		malloc(surfaces * sizeof(unsigned int));
+	unsigned int *surface_array_n = malloc(surfaces * sizeof(unsigned int));
 
 	surfaces = 0;
 	list_element_t *surface_elm;
-	TAILQ_FOREACH(surface_elm, &layer_elm->list_head, entry) {
+	TAILQ_FOREACH(surface_elm, &layer_elm->list_head, entry)
+	{
 		/* FIXME: should we actually do something here? */
 	}
 
@@ -339,17 +345,20 @@ static void debug_print_all_list(void)
 	{
 		fprintf(stderr, "SCR: %d\n", screen_elm->id);
 		list_element_t *layer_elm;
-		TAILQ_FOREACH(layer_elm, &screen_elm->list_head, entry) {
-
+		TAILQ_FOREACH(layer_elm, &screen_elm->list_head, entry)
+		{
 			fprintf(stderr, "   |- LYR: %d\n", layer_elm->id);
 			list_element_t *surface_elm;
 
-			TAILQ_FOREACH(surface_elm, &layer_elm->list_head, entry) {
-				fprintf(stderr, "         |- SFC: %d", surface_elm->id);
+			TAILQ_FOREACH(surface_elm, &layer_elm->list_head, entry)
+			{
+				fprintf(stderr, "         |- SFC: %d",
+					surface_elm->id);
 
 				list_element_t *surface_properties_elm = NULL;
-				surface_properties_elm =
-					get_list_element(&surface_properties_head, surface_elm->id);
+				surface_properties_elm = get_list_element(
+					&surface_properties_head,
+					surface_elm->id);
 				if (surface_properties_elm) {
 					fprintf(stderr, " (SFC Prop Exist) \n");
 				} else {
@@ -681,32 +690,33 @@ static int parse_surface_properties(surface_properties_t *dst_prop,
 	return 0;
 }
 
-static list_element_t *
-grpc_add_layer(list_element_t *screen_elm, json_t *layer_jobj, int layer_id,
-	      CMD_TYPE type, insert_info_t insert_info)
+static list_element_t *grpc_add_layer(list_element_t *screen_elm,
+				      json_t *layer_jobj, int layer_id,
+				      CMD_TYPE type, insert_info_t insert_info)
 {
 	list_element_t *layer_elm = pop_layer(layer_id);
 	if (layer_elm == NULL) {
 		layer_properties_t layer_prop;
 		parse_layer_properties(&layer_prop, layer_jobj, type);
 #ifdef DEBUG
-		fprintf(stderr, "%s() layer width %d, layer height %d, "
-				"src_x %d, src_y %d, src_w %d, src_h %d "
-				"dst_x %d, dst_y %d, dst_w %d, dst_h %d ",
-				__func__, layer_prop.width, layer_prop.height,
-				layer_prop.lp.src_x, layer_prop.lp.src_y,
-				layer_prop.lp.src_w, layer_prop.lp.src_h,
-				layer_prop.lp.dst_x, layer_prop.lp.dst_y,
-				layer_prop.lp.dst_w, layer_prop.lp.dst_h);
+		fprintf(stderr,
+			"%s() layer width %d, layer height %d, "
+			"src_x %d, src_y %d, src_w %d, src_h %d "
+			"dst_x %d, dst_y %d, dst_w %d, dst_h %d ",
+			__func__, layer_prop.width, layer_prop.height,
+			layer_prop.lp.src_x, layer_prop.lp.src_y,
+			layer_prop.lp.src_w, layer_prop.lp.src_h,
+			layer_prop.lp.dst_x, layer_prop.lp.dst_y,
+			layer_prop.lp.dst_w, layer_prop.lp.dst_h);
 #endif
-		layer_elm = add_layer(screen_elm, &layer_prop, layer_id, insert_info);
+		layer_elm = add_layer(screen_elm, &layer_prop, layer_id,
+				      insert_info);
 	}
 
 	return layer_elm;
 }
 
-const char *
-grpc_get_first_available_output(struct GrpcClient *grpc_client)
+const char *grpc_get_first_available_output(struct GrpcClient *grpc_client)
 {
 	int output_no = 0;
 
@@ -718,16 +728,17 @@ grpc_get_first_available_output(struct GrpcClient *grpc_client)
 	return NULL;
 }
 
-static list_element_t *
-grpc_add_surface(list_element_t *layer_elm, json_t *surface_jobj,
-		 int surface_id, CMD_TYPE type, insert_info_t insert_info,
-		 struct GrpcClient *grpc_client)
+static list_element_t *grpc_add_surface(list_element_t *layer_elm,
+					json_t *surface_jobj, int surface_id,
+					CMD_TYPE type,
+					insert_info_t insert_info,
+					struct GrpcClient *grpc_client)
 {
 	list_element_t *surface_elm =
 		pop_list_element(&layer_elm->list_head, surface_id);
 
 	/* the layer contains the values not the surface! */
-	layer_properties_t *llayer_prop = (layer_properties_t *) layer_elm->prop;
+	layer_properties_t *llayer_prop = (layer_properties_t *)layer_elm->prop;
 
 	if (surface_elm == NULL) {
 		char appid[MAX_PATH_SIZE];
@@ -736,31 +747,31 @@ grpc_add_surface(list_element_t *layer_elm, json_t *surface_jobj,
 		layout_properties_t layer_prop = {};
 
 		parse_surface_properties(&surface_prop, surface_jobj, type);
-		surface_elm =
-			add_surface(layer_elm, &surface_prop, surface_id, insert_info);
-
+		surface_elm = add_surface(layer_elm, &surface_prop, surface_id,
+					  insert_info);
 
 #ifdef DEBUG
 		layer_prop = surface_prop.lp;
-		fprintf(stderr, "%s() surface props: src_x %d, src_y %d, src_w %d, src_h %d, "
-				"dst_x %d, dst_y %d, dst_w %d, dst_h %d\n", __func__,
-				layer_prop.src_x, layer_prop.src_y,
-				layer_prop.src_w, layer_prop.src_h,
-				layer_prop.dst_x, layer_prop.dst_y,
-				layer_prop.dst_w, layer_prop.dst_h);
+		fprintf(stderr,
+			"%s() surface props: src_x %d, src_y %d, src_w %d, src_h %d, "
+			"dst_x %d, dst_y %d, dst_w %d, dst_h %d\n",
+			__func__, layer_prop.src_x, layer_prop.src_y,
+			layer_prop.src_w, layer_prop.src_h, layer_prop.dst_x,
+			layer_prop.dst_y, layer_prop.dst_w, layer_prop.dst_h);
 
-		fprintf(stderr, "%s() layer props: src_x %d, src_y %d, src_w %d, src_h %d, "
-				"dst_x %d, dst_y %d, dst_w %d, dst_h %d\n", __func__,
-				llayer_prop->lp.src_x, llayer_prop->lp.src_y,
-				llayer_prop->lp.src_w, llayer_prop->lp.src_h,
-				llayer_prop->lp.dst_x, llayer_prop->lp.dst_y,
-				llayer_prop->lp.dst_w, llayer_prop->lp.dst_h);
+		fprintf(stderr,
+			"%s() layer props: src_x %d, src_y %d, src_w %d, src_h %d, "
+			"dst_x %d, dst_y %d, dst_w %d, dst_h %d\n",
+			__func__, llayer_prop->lp.src_x, llayer_prop->lp.src_y,
+			llayer_prop->lp.src_w, llayer_prop->lp.src_h,
+			llayer_prop->lp.dst_x, llayer_prop->lp.dst_y,
+			llayer_prop->lp.dst_w, llayer_prop->lp.dst_h);
 
 #endif
 
 		/* FIXME: appid should be received from ULA file */
-		const char *dpath = "com.github.remote-virtio-gpu.renderer.sc0.id";
-
+		const char *dpath =
+			"com.github.remote-virtio-gpu.renderer.sc0.id";
 
 		/* these need to be deverived accordingly from what we get from
 		 * ULA */
@@ -769,9 +780,11 @@ grpc_add_surface(list_element_t *layer_elm, json_t *surface_jobj,
 
 		snprintf(appid, MAX_PATH_SIZE, "%s%d", dpath, surface_elm->id);
 
-		const char *output_name = grpc_get_first_available_output(grpc_client);
+		const char *output_name =
+			grpc_get_first_available_output(grpc_client);
 		if (!output_name) {
-			fprintf(stderr, "Invalid output to activate app %s\n", appid);
+			fprintf(stderr, "Invalid output to activate app %s\n",
+				appid);
 			return NULL;
 		}
 
@@ -792,21 +805,22 @@ grpc_add_surface(list_element_t *layer_elm, json_t *surface_jobj,
 			y_pos = llayer_prop->lp.dst_y;
 		}
 
-		fprintf(stderr, "%s() Setting app %s, at position x: %d, y %d\n",
-				__func__, appid, x_pos, x_pos);
+		fprintf(stderr,
+			"%s() Setting app %s, at position x: %d, y %d\n",
+			__func__, appid, x_pos, x_pos);
 
 		grpc_client_set_app_float(grpc_client, appid, x_pos, y_pos);
 
 		fprintf(stderr, "%s() Activating app %s, on output %s\n",
-				__func__, appid, output_name);
+			__func__, appid, output_name);
 		grpc_client_activate_app(grpc_client, appid, output_name);
-
 	}
 
 	return surface_elm;
 }
 
-static int parse_all_grpc_in_screen(json_t *jobject, struct GrpcClient *grpc_client)
+static int parse_all_grpc_in_screen(json_t *jobject,
+				    struct GrpcClient *grpc_client)
 {
 	int screen_idx, layer_idx, surface_idx;
 
@@ -826,7 +840,9 @@ static int parse_all_grpc_in_screen(json_t *jobject, struct GrpcClient *grpc_cli
 		screen_elm = get_list_element(&screen_head, screen_id);
 
 		if (screen_elm == NULL) {
-			fprintf(stderr, "%s() no screen found for screen_id %d. Creating one now\n", __func__, screen_id);
+			fprintf(stderr,
+				"%s() no screen found for screen_id %d. Creating one now\n",
+				__func__, screen_id);
 			screen_elm = add_screen(screen_id);
 		}
 
@@ -841,8 +857,9 @@ static int parse_all_grpc_in_screen(json_t *jobject, struct GrpcClient *grpc_cli
 			parse_id(layer_jobj, &layer_id);
 
 			list_element_t *layer_elm;
-			layer_elm = grpc_add_layer(screen_elm, layer_jobj, layer_id,
-						   CMD_TYPE_ADD, insert_info_default);
+			layer_elm = grpc_add_layer(screen_elm, layer_jobj,
+						   layer_id, CMD_TYPE_ADD,
+						   insert_info_default);
 
 			//3. surfaces(list)
 			json_t *surface_ary_jobj = NULL;
@@ -857,7 +874,8 @@ static int parse_all_grpc_in_screen(json_t *jobject, struct GrpcClient *grpc_cli
 
 				grpc_add_surface(layer_elm, surface_jobj,
 						 surface_id, CMD_TYPE_ADD,
-						 insert_info_default, grpc_client);
+						 insert_info_default,
+						 grpc_client);
 			}
 		}
 		grpc_add_layers_to_screen(screen_elm);
@@ -894,9 +912,8 @@ static void remove_all(void)
 	debug_print_all_list();
 }
 
-
-
-static int parse_add_surface_grpc_command(json_t *jobject, struct GrpcClient *grpc_client)
+static int parse_add_surface_grpc_command(json_t *jobject,
+					  struct GrpcClient *grpc_client)
 {
 	int screen_idx, lyr_idx, surface_idx;
 	json_t *screen_ary_jobj = NULL;
@@ -919,28 +936,33 @@ static int parse_add_surface_grpc_command(json_t *jobject, struct GrpcClient *gr
 		}
 
 		json_t *layer_jobj;
-		json_array_foreach(layer_ary_jobj, lyr_idx, layer_jobj) {
+		json_array_foreach(layer_ary_jobj, lyr_idx, layer_jobj)
+		{
 			unsigned int layer_id = 0;
 			parse_id(layer_jobj, &layer_id);
 
 			list_element_t *layer_elm = get_layer(layer_id);
 			if (layer_elm != NULL) {
 				json_t *surface_ary_jobj = NULL;
-				if (parse_surfaces(layer_jobj, &surface_ary_jobj) < 0) {
+				if (parse_surfaces(layer_jobj,
+						   &surface_ary_jobj) < 0) {
 					return -1;
 				}
 
 				json_t *surface_jobj;
 				json_array_foreach(surface_ary_jobj,
-						   surface_idx, surface_jobj) {
+						   surface_idx, surface_jobj)
+				{
 					unsigned int surface_id = 0;
-					if (parse_id(surface_jobj, &surface_id) < 0) {
+					if (parse_id(surface_jobj,
+						     &surface_id) < 0) {
 						return -1;
 					}
 
-					grpc_add_surface(layer_elm, surface_jobj,
-							 surface_id, CMD_TYPE_ADD,
-							 insert_info, grpc_client);
+					grpc_add_surface(
+						layer_elm, surface_jobj,
+						surface_id, CMD_TYPE_ADD,
+						insert_info, grpc_client);
 				}
 			}
 		}
@@ -949,17 +971,17 @@ static int parse_add_surface_grpc_command(json_t *jobject, struct GrpcClient *gr
 	return 0;
 }
 
-
 /* FIXME: implement this */
 static void parse_unsupported_grpc_command(json_t *jobject)
 {
-	(void) jobject;
+	(void)jobject;
 }
 
-static int parse_remove_surface_grpc_command(json_t *jobject, struct GrpcClient *grpc_client)
+static int parse_remove_surface_grpc_command(json_t *jobject,
+					     struct GrpcClient *grpc_client)
 {
 	int lyr_idx, surface_idx;
-	(void) grpc_client;
+	(void)grpc_client;
 
 	json_t *layer_ary_jobj = NULL;
 	if (parse_layers(jobject, &layer_ary_jobj) < 0) {
@@ -967,7 +989,8 @@ static int parse_remove_surface_grpc_command(json_t *jobject, struct GrpcClient 
 	}
 
 	json_t *layer_jobj;
-	json_array_foreach(layer_ary_jobj, lyr_idx, layer_jobj) {
+	json_array_foreach(layer_ary_jobj, lyr_idx, layer_jobj)
+	{
 		unsigned int layer_id = 0;
 		if (parse_id(layer_jobj, &layer_id) < 0) {
 			return -1;
@@ -981,7 +1004,9 @@ static int parse_remove_surface_grpc_command(json_t *jobject, struct GrpcClient 
 			}
 
 			json_t *surface_jobj;
-			json_array_foreach(surface_ary_jobj, surface_idx, surface_jobj) {
+			json_array_foreach(surface_ary_jobj, surface_idx,
+					   surface_jobj)
+			{
 				unsigned int surface_id = 0;
 				if (parse_id(surface_jobj, &surface_id) < 0) {
 					return -1;
@@ -995,8 +1020,8 @@ static int parse_remove_surface_grpc_command(json_t *jobject, struct GrpcClient 
 	return 0;
 }
 
-static int
-parse_init_grpc_screen_command(json_t *jobject, struct GrpcClient *grpc_client)
+static int parse_init_grpc_screen_command(json_t *jobject,
+					  struct GrpcClient *grpc_client)
 {
 	if (parse_version(jobject) < 0) {
 		return -1;

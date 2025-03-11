@@ -15,12 +15,13 @@
 
 #include "agl_shell.grpc.pb.h"
 
-typedef void (*Callback)(agl_shell_ipc::AppStateResponse app_response, void *data);
+typedef void (*Callback)(agl_shell_ipc::AppStateResponse app_response,
+			 void *data);
 
-class Reader : public grpc::ClientReadReactor<::agl_shell_ipc::AppStateResponse> {
-public:
-	Reader(agl_shell_ipc::AglShellManagerService::Stub *stub)
-		: m_stub(stub)
+class Reader
+	: public grpc::ClientReadReactor< ::agl_shell_ipc::AppStateResponse> {
+    public:
+	Reader(agl_shell_ipc::AglShellManagerService::Stub *stub) : m_stub(stub)
 	{
 	}
 
@@ -55,7 +56,7 @@ public:
 		m_done = true;
 	}
 
-	void OnDone(const grpc::Status& s) override
+	void OnDone(const grpc::Status &s) override
 	{
 		fprintf(stderr, "%s()\n", __func__);
 		std::unique_lock<std::mutex> l(m_mutex);
@@ -74,14 +75,14 @@ public:
 
 		return std::move(m_status);
 	}
-private:
+
+    private:
 	grpc::ClientContext m_context;
 	::agl_shell_ipc::AppStateResponse m_app_state;
 	void *m_data;
 	agl_shell_ipc::AglShellManagerService::Stub *m_stub;
 
 	Callback m_callback;
-
 
 	std::mutex m_mutex;
 	std::condition_variable m_cv;
@@ -90,25 +91,28 @@ private:
 };
 
 class GrpcClient {
-public:
+    public:
 	GrpcClient();
 	void WaitForConnected(int wait_time_ms, int tries_timeout);
-	bool ActivateApp(const std::string& app_id, const std::string& output_name);
-	bool DeactivateApp(const std::string& app_id);
-	bool SetAppFloat(const std::string& app_id, int32_t x_pos, int32_t y_pos);
-	bool SetAppFullscreen(const std::string& app_id);
-	bool SetAppOnOutput(const std::string& app_id, const std::string& output);
-	bool SetAppNormal(const std::string& app_id);
-	bool SetAppPosition(const std::string& app_id, int32_t x, int32_t y);
-	bool SetAppScale(const std::string& app_id, int32_t width, int32_t height);
+	bool ActivateApp(const std::string &app_id,
+			 const std::string &output_name);
+	bool DeactivateApp(const std::string &app_id);
+	bool SetAppFloat(const std::string &app_id, int32_t x_pos,
+			 int32_t y_pos);
+	bool SetAppFullscreen(const std::string &app_id);
+	bool SetAppOnOutput(const std::string &app_id,
+			    const std::string &output);
+	bool SetAppNormal(const std::string &app_id);
+	bool SetAppPosition(const std::string &app_id, int32_t x, int32_t y);
+	bool SetAppScale(const std::string &app_id, int32_t width,
+			 int32_t height);
 	std::vector<std::string> GetOutputs();
 	void GetAppState();
 	void AppStatusState(Callback callback, void *data);
 	grpc::Status Wait();
 
-private:
+    private:
 	Reader *reader;
 	std::unique_ptr<agl_shell_ipc::AglShellManagerService::Stub> m_stub;
 	std::shared_ptr<grpc::Channel> m_channel;
 };
-

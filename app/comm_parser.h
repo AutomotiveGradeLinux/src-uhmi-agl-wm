@@ -55,8 +55,6 @@ typedef struct _list_element {
 	TAILQ_ENTRY(_list_element) entry;
 } list_element_t;
 
-
 int parser_parse_recv_command(char *msg, struct GrpcClient *grpc_client);
-
 
 #endif //__COMM_PARSER_H__

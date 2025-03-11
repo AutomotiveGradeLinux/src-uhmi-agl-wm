@@ -18,22 +18,22 @@
 
 using namespace std::chrono;
 
-namespace {
-	const char kDefaultGrpcServiceAddress[] = "127.0.0.1:14005";
+namespace
+{
+const char kDefaultGrpcServiceAddress[] = "127.0.0.1:14005";
 }
 
 GrpcClient::GrpcClient()
 {
 	m_channel = grpc::CreateChannel(kDefaultGrpcServiceAddress,
-			grpc::InsecureChannelCredentials());
+					grpc::InsecureChannelCredentials());
 
 	// init the stub here
 	m_stub = agl_shell_ipc::AglShellManagerService::NewStub(m_channel);
 	reader = new Reader(m_stub.get());
 }
 
-void
-GrpcClient::WaitForConnected(int wait_time_ms, int tries_timeout)
+void GrpcClient::WaitForConnected(int wait_time_ms, int tries_timeout)
 {
 	struct timespec ts;
 	grpc_connectivity_state state;
@@ -43,17 +43,17 @@ GrpcClient::WaitForConnected(int wait_time_ms, int tries_timeout)
 	ts.tv_sec = 0;
 	ts.tv_nsec = wait_time_ms * 1000 * 1000;
 
-	while (((state = m_channel->GetState(true)) != GRPC_CHANNEL_READY) && 
-		try_++ < tries_timeout) {
-		fprintf(stderr, "waiting for channel state to be ready, current state %d\n", state);
+	while (((state = m_channel->GetState(true)) != GRPC_CHANNEL_READY) &&
+	       try_++ < tries_timeout) {
+		fprintf(stderr,
+			"waiting for channel state to be ready, current state %d\n",
+			state);
 		nanosleep(&ts, NULL);
 	}
-
 }
 
-
-bool
-GrpcClient::ActivateApp(const std::string& app_id, const std::string& output_name)
+bool GrpcClient::ActivateApp(const std::string &app_id,
+			     const std::string &output_name)
 {
 	agl_shell_ipc::ActivateRequest request;
 
@@ -67,8 +67,7 @@ GrpcClient::ActivateApp(const std::string& app_id, const std::string& output_nam
 	return status.ok();
 }
 
-bool
-GrpcClient::DeactivateApp(const std::string& app_id)
+bool GrpcClient::DeactivateApp(const std::string &app_id)
 {
 	agl_shell_ipc::DeactivateRequest request;
 
@@ -81,8 +80,8 @@ GrpcClient::DeactivateApp(const std::string& app_id)
 	return status.ok();
 }
 
-bool
-GrpcClient::SetAppFloat(const std::string& app_id, int32_t x_pos, int32_t y_pos)
+bool GrpcClient::SetAppFloat(const std::string &app_id, int32_t x_pos,
+			     int32_t y_pos)
 {
 	agl_shell_ipc::FloatRequest request;
 
@@ -94,14 +93,14 @@ GrpcClient::SetAppFloat(const std::string& app_id, int32_t x_pos, int32_t y_pos)
 	grpc::ClientContext context;
 	::agl_shell_ipc::FloatResponse reply;
 
-	fprintf(stderr, "%s() calling SetAppFloat with x_pos %d, y_pos %d\n", __func__, x_pos, y_pos);
+	fprintf(stderr, "%s() calling SetAppFloat with x_pos %d, y_pos %d\n",
+		__func__, x_pos, y_pos);
 
 	grpc::Status status = m_stub->SetAppFloat(&context, request, &reply);
 	return status.ok();
 }
 
-bool
-GrpcClient::SetAppNormal(const std::string& app_id)
+bool GrpcClient::SetAppNormal(const std::string &app_id)
 {
 	agl_shell_ipc::NormalRequest request;
 
@@ -114,8 +113,7 @@ GrpcClient::SetAppNormal(const std::string& app_id)
 	return status.ok();
 }
 
-bool
-GrpcClient::SetAppFullscreen(const std::string& app_id)
+bool GrpcClient::SetAppFullscreen(const std::string &app_id)
 {
 	agl_shell_ipc::FullscreenRequest request;
 
@@ -124,12 +122,13 @@ GrpcClient::SetAppFullscreen(const std::string& app_id)
 	grpc::ClientContext context;
 	::agl_shell_ipc::FullscreenResponse reply;
 
-	grpc::Status status = m_stub->SetAppFullscreen(&context, request, &reply);
+	grpc::Status status =
+		m_stub->SetAppFullscreen(&context, request, &reply);
 	return status.ok();
 }
 
-bool
-GrpcClient::SetAppOnOutput(const std::string& app_id, const std::string &output)
+bool GrpcClient::SetAppOnOutput(const std::string &app_id,
+				const std::string &output)
 {
 	agl_shell_ipc::AppOnOutputRequest request;
 
@@ -143,8 +142,7 @@ GrpcClient::SetAppOnOutput(const std::string& app_id, const std::string &output)
 	return status.ok();
 }
 
-bool
-GrpcClient::SetAppPosition(const std::string& app_id, int32_t x, int32_t y)
+bool GrpcClient::SetAppPosition(const std::string &app_id, int32_t x, int32_t y)
 {
 	agl_shell_ipc::AppPositionRequest request;
 
@@ -159,8 +157,8 @@ GrpcClient::SetAppPosition(const std::string& app_id, int32_t x, int32_t y)
 	return status.ok();
 }
 
-bool
-GrpcClient::SetAppScale(const std::string& app_id, int32_t width, int32_t height)
+bool GrpcClient::SetAppScale(const std::string &app_id, int32_t width,
+			     int32_t height)
 {
 	agl_shell_ipc::AppScaleRequest request;
 
@@ -171,27 +169,24 @@ GrpcClient::SetAppScale(const std::string& app_id, int32_t width, int32_t height
 	grpc::ClientContext context;
 	::agl_shell_ipc::AppScaleResponse reply;
 
-	fprintf(stderr, "%s() calling SetAppScale with width %d, height %d\n", __func__, width, height);
+	fprintf(stderr, "%s() calling SetAppScale with width %d, height %d\n",
+		__func__, width, height);
 
 	grpc::Status status = m_stub->SetAppScale(&context, request, &reply);
 	return status.ok();
 }
 
-
-grpc::Status
-GrpcClient::Wait(void)
+grpc::Status GrpcClient::Wait(void)
 {
 	return reader->Await();
 }
 
-void
-GrpcClient::AppStatusState(Callback callback, void *data)
+void GrpcClient::AppStatusState(Callback callback, void *data)
 {
 	reader->AppStatusState(callback, data);
 }
 
-std::vector<std::string>
-GrpcClient::GetOutputs()
+std::vector<std::string> GrpcClient::GetOutputs()
 {
 	grpc::ClientContext context;
 	std::vector<std::string> v;
@@ -221,32 +216,30 @@ extern "C" GrpcClient *init_grpc_client(void)
 	return client;
 }
 
-extern "C" void
-destroy_grpc_client(GrpcClient *c)
+extern "C" void destroy_grpc_client(GrpcClient *c)
 {
 	delete c;
 }
 
-extern "C" void
-grpc_client_set_app_float(GrpcClient *c, const char *app_id, int32_t x_pos, int32_t y_pos)
+extern "C" void grpc_client_set_app_float(GrpcClient *c, const char *app_id,
+					  int32_t x_pos, int32_t y_pos)
 {
 	c->SetAppFloat(std::string(app_id), x_pos, y_pos);
 }
 
-extern "C" void
-grpc_client_activate_app(GrpcClient *c, const char *app_id, const char *output)
+extern "C" void grpc_client_activate_app(GrpcClient *c, const char *app_id,
+					 const char *output)
 {
 	c->ActivateApp(std::string(app_id), std::string(output));
 }
 
-extern "C" void
-grpc_client_set_app_scale(GrpcClient *c, const char *app_id, int32_t width, int32_t height)
+extern "C" void grpc_client_set_app_scale(GrpcClient *c, const char *app_id,
+					  int32_t width, int32_t height)
 {
 	c->SetAppScale(std::string(app_id), width, height);
 }
 
-extern "C" char **
-grpc_client_get_outputs(GrpcClient *c, int *output_no)
+extern "C" char **grpc_client_get_outputs(GrpcClient *c, int *output_no)
 {
 	char **my_outputs = NULL;
 	int o = 0;
@@ -258,12 +251,14 @@ grpc_client_get_outputs(GrpcClient *c, int *output_no)
 		return my_outputs;
 	}
 
-	my_outputs = static_cast<char **>(calloc(outputs.size(), sizeof(char *)));
+	my_outputs =
+		static_cast<char **>(calloc(outputs.size(), sizeof(char *)));
 
 	for (size_t i = 0; i < outputs.size(); i++, o++) {
 		const char *out_name = outputs[i].c_str();
 
-		my_outputs[i] = static_cast<char *>(calloc(1, strlen(out_name) + 1));
+		my_outputs[i] =
+			static_cast<char *>(calloc(1, strlen(out_name) + 1));
 		memcpy(my_outputs[i], out_name, strlen(out_name));
 	}
 
@@ -271,5 +266,4 @@ grpc_client_get_outputs(GrpcClient *c, int *output_no)
 
 	*output_no = o;
 	return my_outputs;
-
 }
